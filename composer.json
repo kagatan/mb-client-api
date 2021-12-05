@@ -1,0 +1,27 @@
+{
+  "name": "kagatan/mb-client-api",
+  "description": "Class for working with Mikbill users through the client api",
+  "minimum-stability": "stable",
+  "license": "proprietary",
+  "keywords": [
+    "MikBill",
+    "users",
+    "api",
+    "cabinet",
+    "app",
+  ],
+  "authors": [
+    {
+      "name": "Kagatan",
+      "email": "stupakovmax@gmail.com"
+    }
+  ],
+  "require": {
+    
+  },
+  "autoload": {
+    "psr-4": {
+      "Kagatan\\MikBillClientAPI\\": "src/"
+    }
+  }
+}
