@@ -28,7 +28,7 @@ class ClientAPI
             'password' => $pass,
         ];
 
-        return $this->sendRequest('POST', '/api/v1/cabinet/auth', $params);
+        return $this->sendRequest('POST', '/api/v1/cabinet/auth/login', $params);
     }
 
     /**
