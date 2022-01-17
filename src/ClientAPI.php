@@ -1,18 +1,108 @@
 <?php
 
 
-namespace kagatan\MikBillClientAPI;
+namespace Kagatan\MikBillClientAPI;
 
+
+use GuzzleHttp\Client;
 
 class ClientAPI
 {
-    private $host;
-    private $token;
+    private $secret_key = null;
+    private $jwt_token = null;
+    private $client = null;
 
-    public function __construct($host)
+
+    public function __construct($host, $secret_key = null)
     {
-        $this->host = $host;
+        $this->secret_key = $secret_key;
+
+        $this->client = new Client([
+            'base_uri' => $host,
+            'verify'   => false
+        ]);
     }
+
+    public function setJWT($token)
+    {
+        $this->jwt_token = $token;
+    }
+
+
+    /**
+     * Поиск в биллинге абонента по user_id telegram`a
+     *
+     * p.s. Запрос необходимо подписывать. Не пользовательское API
+     *
+     * @param $value
+     * @param string $key
+     * @return bool|mixed
+     */
+    public function searchUser($value, $key = 'user_id')
+    {
+        $params = [
+            $key => $value
+        ];
+
+        return $this->sendRequest('/api/v1/telegram/users/search', 'POST', $params, true);
+    }
+
+
+    /**
+     * Привязка абонента к user_id telegram`a
+     *
+     * p.s. Запрос необходимо подписывать. Не пользовательское API
+     *
+     * @param $user_id
+     * @param $uid
+     * @return bool|mixed
+     */
+    public function bindUserTelegram($user_id, $uid)
+    {
+        $params = [
+            'user_id' => $user_id,
+            'uid'     => $uid,
+        ];
+
+        return $this->sendRequest('/api/v1/telegram/users/bind', 'POST', $params, true);
+    }
+
+
+    /**
+     * Получим JWT токен для работы пользовательским API
+     *
+     * p.s. Запрос необходимо подписывать. Не пользовательское API
+     *
+     * @param $uid
+     * @return bool|mixed
+     */
+    public function getUserToken($uid)
+    {
+        $params = [
+            "uid" => $uid
+        ];
+        $response = $this->sendRequest('/api/v1/telegram/users/token', 'POST', $params, true);
+
+        // Если пришел токен пропишем его
+        if (isset($response['data']['token'])) {
+            $this->setJWT($response['data']['token']);
+        }
+
+        return $response;
+    }
+
+
+    /**
+     * Получить информацию об абоненте
+     *
+     * @return bool|mixed
+     */
+    public function getUser()
+    {
+        return $this->sendRequest('/api/v1/cabinet/user', 'GET');
+    }
+
+
 
     /**
      * Авторизация пользователя
@@ -31,62 +121,29 @@ class ClientAPI
         return $this->sendRequest('POST', '/api/v1/cabinet/auth/login', $params);
     }
 
-    /**
-     * Карточка пользователя
-     *
-     * @return mixed
-     */
-    public function getUser()
-    {
-        return $this->sendRequest('GET', '/api/v1/cabinet/user');
-    }
 
-    /**
-     * Получить токен
-     *
-     * @return mixed
-     */
-    public function getToken()
+    private function sendRequest($uri, $method = 'POST', $params = [], $sign = false)
     {
-        return $this->token;
-    }
-
-    private function sendRequest($method, $resource, $dataArray = array())
-    {
-        $url = $this->host . $resource;
-
         $headers = [];
 
-        if (!empty($this->token)) {
-            $headers[] = "Authorization: " . $this->token;
+        if ($sign) {
+            $salt = uniqid();
+            $params['salt'] = $salt;
+            $params['sign'] = hash_hmac('sha512', $salt, $this->secret_key);
+        } else {
+            $headers['Authorization'] = $this->jwt_token;
         }
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_VERBOSE, FALSE);
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-        curl_setopt($ch, CURLINFO_HEADER_OUT, TRUE);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+        $res = $this->client->request($method, $uri, [
+            'form_params' => $params,
+            'headers'     => $headers
+        ]);
 
-        if ($method = 'POST') {
-            curl_setopt($ch, CURLOPT_POST, TRUE);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $dataArray);
+        if ($res->getStatusCode() == 200) { // 200 OK
+            return json_decode($res->getBody()->getContents(), true);
         }
 
-        $result = curl_exec($ch);
-        curl_close($ch);
-
-        $response = json_decode($result, true);
-
-        if (isset($response['data']['token'])) {
-            $this->token = $response['data']['token'];
-        }
-
-        return $response;
+        return false;
     }
 
 }
