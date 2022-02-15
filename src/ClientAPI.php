@@ -104,7 +104,6 @@ class ClientAPI
     }
 
 
-
     /**
      * Авторизация пользователя
      *
@@ -119,7 +118,7 @@ class ClientAPI
             'password' => $pass,
         ];
 
-        return $this->sendRequest('POST', '/api/v1/cabinet/auth/login', $params);
+        return $this->sendRequest('/api/v1/cabinet/auth/login', 'POST', $params);
     }
 
 
@@ -132,10 +131,10 @@ class ClientAPI
     public function authPhone($phone)
     {
         $params = [
-            'phone'    => $phone,
+            'phone' => $phone,
         ];
 
-        return $this->sendRequest('POST', '/api/v1/cabinet/auth/phone', $params);
+        return $this->sendRequest('/api/v1/cabinet/auth/phone', 'POST', $params);
     }
 
 
