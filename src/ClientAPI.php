@@ -123,6 +123,22 @@ class ClientAPI
     }
 
 
+    /**
+     * Авторизация по телефону
+     *
+     * @param $phone
+     * @return bool|mixed
+     */
+    public function authPhone($phone)
+    {
+        $params = [
+            'phone'    => $phone,
+        ];
+
+        return $this->sendRequest('POST', '/api/v1/cabinet/auth/phone', $params);
+    }
+
+
     private function sendRequest($uri, $method = 'POST', $params = [], $sign = false)
     {
         $headers = [];
