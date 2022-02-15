@@ -137,6 +137,21 @@ class ClientAPI
         return $this->sendRequest('/api/v1/cabinet/auth/phone', 'POST', $params);
     }
 
+    /**
+     * Ввод кода отп для авторизации по телефону
+     *
+     * @param $otp
+     * @return bool|mixed
+     */
+    public function authPhoneOtpApply($otp)
+    {
+        $params = [
+            'otp' => $otp,
+        ];
+
+        return $this->sendRequest('/api/v1/cabinet/auth/phone/otp', 'POST', $params);
+    }
+
 
     private function sendRequest($uri, $method = 'POST', $params = [], $sign = false)
     {
