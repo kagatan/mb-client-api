@@ -41,10 +41,11 @@ class ClientAPI
     public function searchUser($value, $key = 'user_id')
     {
         $params = [
-            $key => $value
+            'field' => $key,
+            'value' => $value
         ];
 
-        return $this->sendRequest('/api/v1/telegram/users/search', 'POST', $params, true);
+        return $this->sendRequest('/api/v1/billing/users/search', 'POST', $params, true);
     }
 
 
@@ -57,14 +58,14 @@ class ClientAPI
      * @param $uid
      * @return bool|mixed
      */
-    public function bindUserTelegram($user_id, $uid)
+    public function bindUser($user_id, $uid)
     {
         $params = [
             'user_id' => $user_id,
             'uid'     => $uid,
         ];
 
-        return $this->sendRequest('/api/v1/telegram/users/bind', 'POST', $params, true);
+        return $this->sendRequest('/api/v1/billing/users/bind', 'POST', $params, true);
     }
 
 
@@ -81,7 +82,7 @@ class ClientAPI
         $params = [
             "uid" => $uid
         ];
-        $response = $this->sendRequest('/api/v1/telegram/users/token', 'POST', $params, true);
+        $response = $this->sendRequest('/api/v1/billing/users/token', 'POST', $params, true);
 
         // Если пришел токен пропишем его
         if (isset($response['data']['token'])) {
