@@ -5,6 +5,16 @@ namespace Kagatan\MikBillClientAPI;
 
 
 use GuzzleHttp\Client;
+use function Monolog\pushHandler;
+
+
+if (!function_exists('storage_path')) {
+
+    function storage_path($path)
+    {
+        return './' . $path;
+    }
+}
 
 class ClientAPI
 {
@@ -12,16 +22,71 @@ class ClientAPI
     private $jwt_token = null;
     private $client = null;
 
+    private $logger = null;
+    private $log_path = 'logs/api-client.log';
 
-    public function __construct($host, $secret_key = null)
+
+    public function __construct($host, $secret_key = null, $debug = false)
     {
         $this->secret_key = $secret_key;
 
-        $this->client = new Client([
+        $config = [
             'base_uri' => $host,
             'verify'   => false
-        ]);
+        ];
+
+        if ($debug) {
+            $config['handler'] = $this->createLoggingHandlerStack([
+                'METHOD: {method} {uri} HTTP/{version}',
+                'REQUEST: {req_body}',
+                'RESPONSE: {code} - {res_body}',
+                '******************************'
+            ]);
+        }
+        $this->client = new Client($config);
     }
+
+    public function setLogPath($path)
+    {
+        $this->log_path = $path;
+    }
+
+    private function createLoggingHandlerStack(array $templates)
+    {
+        $stack = \GuzzleHttp\HandlerStack::create();
+
+        foreach ($templates as $template) {
+            $stack->unshift(
+                $this->createGuzzleLoggingMiddleware($template)
+            );
+        }
+
+        return $stack;
+    }
+
+    private function getLogger()
+    {
+        if (!$this->logger) {
+
+            $this->logger = new \Monolog\Logger('api-сlient');
+
+            $this->logger->pushHandler(
+                new \Monolog\Handler\RotatingFileHandler(storage_path($this->log_path))
+            );
+        }
+
+        return $this->logger;
+    }
+
+
+    private function createGuzzleLoggingMiddleware($messageFormat)
+    {
+        return \GuzzleHttp\Middleware::log(
+            $this->getLogger(),
+            new \GuzzleHttp\MessageFormatter($messageFormat)
+        );
+    }
+
 
     public function setJWT($token)
     {
